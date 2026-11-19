@@ -1,771 +1,558 @@
 <!DOCTYPE html>
-<html lang="id" class="scroll-smooth">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PGM STUDIO - Jasa Desain & Production Services</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>Dashboard Admin - PGM Express</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            dark: '#0a0f1d',
-                            card: '#131c31',
-                            border: '#1e2d4a',
-                            accent: '#38bdf8',
-                            emerald: '#10b981'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        :root {
-            --bg-dark: #0a0f1d;
-            --bg-card: #131c31;
-            --border-color: #1e2d4a;
-            --accent-cyan: #38bdf8;
-            --accent-green: #10b981;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            line-height: 1.5;
-        }
-
-        .glass-nav {
-            background: rgba(10, 15, 29, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-
-        .glow-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .glow-hover:hover {
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
-            border-color: var(--accent-cyan);
-            transform: translateY(-3px);
-        }
-
-        .badge-premium {
-            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
-            color: #0f172a;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-        }
-
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .animate-modal {
-            animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen selection:bg-sky-500 selection:text-slate-900">
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between pb-12">
 
-    <!-- 1. HEADER / NAVBAR -->
-    <header class="sticky top-0 z-40 glass-nav border-b border-slate-800/80 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-sky-500 to-emerald-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-transform">
-                    P
-                </div>
-                <div class="text-2xl font-black tracking-wider text-white">
-                    PGM<span class="text-sky-400">STUDIO</span>
-                </div>
-            </a>
+    <!-- OVERLAY LOCK SCREEN PIN ADMIN -->
+    <div id="admin-lock-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/98 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full text-center space-y-6 shadow-2xl">
+            <div class="w-16 h-16 rounded-2xl bg-amber-500 text-slate-950 font-black text-3xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-black text-white">Admin <span class="text-amber-400">PGM Express</span></h2>
+                <p class="text-xs text-slate-400 mt-1">Masukkan PIN Rahasia Admin.</p>
+            </div>
+            <div>
+                <input type="password" id="input-pin-admin" placeholder="Masukkan 6 Digit PIN..." class="w-full text-center tracking-widest text-lg font-bold bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500">
+                <p id="error-pin" class="text-rose-400 text-[11px] mt-2 hidden">PIN Admin tidak cocok!</p>
+            </div>
+            <button onclick="verifikasiPinAdmin()" class="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all cursor-pointer shadow-lg">
+                Masuk Dashboard Admin
+            </button>
+        </div>
+    </div>
 
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="#home" class="text-slate-300 hover:text-sky-400 font-semibold text-sm transition-colors">Beranda</a>
-                <a href="#services" class="text-slate-300 hover:text-sky-400 font-semibold text-sm transition-colors">Layanan Kami</a>
-                <a href="#catalog" class="text-slate-300 hover:text-sky-400 font-semibold text-sm transition-colors">Katalog & Order</a>
-                <a href="#portfolio" class="text-slate-300 hover:text-sky-400 font-semibold text-sm transition-colors">Portofolio</a>
-                <a href="#contact" class="text-slate-300 hover:text-sky-400 font-semibold text-sm transition-colors">Kontak</a>
-            </nav>
-
-            <div class="flex items-center gap-4">
-                <button type="button" onclick="toggleCartDrawer(true)" class="relative p-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-all hover:scale-105 cursor-pointer z-10" title="Buka Keranjang">
-                    <i class="fas fa-shopping-bag text-lg text-sky-400"></i>
-                    <span id="cart-badge-count" class="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 font-extrabold text-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-950 shadow">0</span>
-                </button>
-
-                <a href="https://wa.me/6285786457121?text=Halo%20admin%20PGM%20STUDIO,%20saya%20mau%20konsultasi%20desain/produksi" target="_blank" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 hover:scale-105">
-                    <i class="fab fa-whatsapp text-lg"></i>
-                    <span>Konsultasi</span>
+    <!-- MODAL POPUP LIHAT FOTO KTP -->
+    <div id="modal-ktp" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fas fa-id-card"></i> Foto Identitas KTP / SIM Pembeli
+                </h3>
+                <button onclick="tutupModalKtp()" class="text-slate-400 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex justify-center bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <img id="modal-ktp-img" src="" alt="Foto KTP" class="max-h-80 w-auto object-contain rounded-lg">
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-400">
+                <span id="modal-ktp-nama" class="font-bold text-white"></span>
+                <a id="modal-ktp-download" href="#" target="_blank" download="KTP.png" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition flex items-center gap-1.5">
+                    <i class="fas fa-download"></i> Unduh Foto
                 </a>
-
-                <button type="button" onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-slate-800 cursor-pointer">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
             </div>
         </div>
+    </div>
 
-        <div id="mobile-menu" class="hidden md:hidden bg-slate-950 border-b border-slate-800 px-6 py-4 space-y-3">
-            <a href="#home" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-sky-400 font-medium">Beranda</a>
-            <a href="#services" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-sky-400 font-medium">Layanan Kami</a>
-            <a href="#catalog" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-sky-400 font-medium">Katalog & Order</a>
-            <a href="#portfolio" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-sky-400 font-medium">Portofolio</a>
-            <a href="#contact" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-sky-400 font-medium">Kontak</a>
-            <a href="https://wa.me/6285786457121" target="_blank" class="w-full mt-2 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold">
-                <i class="fab fa-whatsapp text-lg"></i>
-                <span>Chat Admin WA</span>
-            </a>
+    <!-- MODAL POPUP DETAIL LOKASI GPS & MAPS -->
+    <div id="modal-lokasi" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-sky-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-sky-400 flex items-center gap-2">
+                    <i class="fas fa-map-marked-alt"></i> Detail Titik GPS Pembeli
+                </h3>
+                <button onclick="tutupModalLokasi()" class="text-slate-400 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="konten-detail-lokasi" class="space-y-2.5 text-xs text-slate-300">
+                <!-- Data GPS & Tombol Maps dimasukkan dinamis -->
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER NAVBAR ADMIN -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-white tracking-wide">Dashboard <span class="text-amber-400">Admin</span></h1>
+                    <p class="text-[10px] text-slate-400">Pusat Kendali Kasbon & Top Up PGM Express</p>
+                </div>
+            </div>
+            <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-sign-out-alt"></i> Keluar Admin
+            </button>
         </div>
     </header>
 
-    <main class="flex-grow">
-        <!-- HERO SECTION -->
-        <section id="home" class="relative py-20 lg:py-28 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800/80">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/10 text-sky-400 text-xs sm:text-sm font-bold border border-sky-500/20 mb-6 uppercase tracking-wider">
-                    <i class="fas fa-sparkles text-amber-400"></i> Graphic Design & Production Studio
+    <!-- KONTEN UTAMA -->
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-8 flex-1 w-full">
+
+        <!-- RINGKASAN STATISTIK -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">Total Antrean Kasbon</p>
+                    <h3 id="stat-pending" class="text-2xl font-black text-amber-400 mt-1">0</h3>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-xl">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">Total Transaksi Lunas</p>
+                    <h3 id="stat-lunas" class="text-2xl font-black text-emerald-400 mt-1">0</h3>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">Status Lisensi KTP</p>
+                    <h3 id="stat-ktp" class="text-sm font-black text-sky-400 mt-1">Terkunci</h3>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center text-xl">
+                    <i class="fas fa-id-card"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABEL KELOLA TRANSAKSI -->
+        <section class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-tasks text-amber-400"></i> Kelola Transaksi & Pelacakan GPS Akurat
+                </h2>
+                <span class="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+                    <i class="fas fa-wifi"></i> Terhubung Server
                 </span>
-                
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight">
-                    Solusi Kreatif untuk <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-teal-300 to-emerald-400">Branding, Desain & Produksi</span> Kamu
-                </h1>
-                
-                <p class="mt-6 text-base sm:text-xl text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
-                    Melayani Jasa Desain Baju, Cetak Baju Satuan & Lusinan, Logo Branding, Poster Tugas Kilat, hingga Boost Popularitas Media Sosial!
-                </p>
+            </div>
 
-                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="#catalog" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-base transition-all shadow-lg shadow-sky-500/25 hover:scale-105 flex items-center justify-center gap-3">
-                        <i class="fas fa-shopping-bag"></i> Lihat Layanan & Order
-                    </a>
-                    <a href="https://wa.me/6285786457121?text=Halo%20admin%20PGM%20STUDIO,%20saya%20mau%20order" target="_blank" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base transition-all hover:scale-105 flex items-center justify-center gap-3">
-                        <i class="fab fa-whatsapp text-emerald-400 text-xl"></i> Chat Admin WhatsApp
-                    </a>
+            <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800 text-slate-200 uppercase text-[10px] font-bold tracking-wider">
+                        <tr>
+                            <th class="p-3">Tgl Pinjam</th>
+                            <th class="p-3">Jenis / Tempo</th>
+                            <th class="p-3">Nama & Email Terikat</th>
+                            <th class="p-3">No. WhatsApp</th>
+                            <th class="p-3">No. DANA</th>
+                            <th class="p-3">Total Nominal</th>
+                            <th class="p-3 text-center">Titik GPS</th>
+                            <th class="p-3 text-center">Berkas KTP</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Aksi Kendali Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-tabel-body" class="divide-y divide-slate-800">
+                        <tr>
+                            <td colspan="10" class="text-center py-8 text-slate-500 italic text-xs">Memuat data transaksi dari server...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PANEL REKAPITULASI KEUANGAN BULANAN DETAIL PER BARIS -->
+        <section class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-chart-line text-amber-400"></i> Rekapitulasi Rinci Per Baris (Bulanan)
+                </h2>
+                <div class="flex items-center gap-2">
+                    <label for="filter-bulan-rekap" class="text-xs text-slate-400 font-bold">Pilih Bulan:</label>
+                    <select id="filter-bulan-rekap" onchange="renderRekapBulanan()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-bold">
+                        <!-- Opsi bulan di-generate otomatis -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABEL RINCIAN PER BARIS (MENAMPILKAN NAMA SATU PERSATU) -->
+            <div class="overflow-x-auto no-scrollbar border border-slate-800 rounded-xl bg-slate-950 p-2">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900 text-slate-400 uppercase text-[9px] font-bold border-b border-slate-800">
+                        <tr>
+                            <th class="p-2.5">Tanggal</th>
+                            <th class="p-2.5">Nama Pembeli</th>
+                            <th class="p-2.5">No. WhatsApp</th>
+                            <th class="p-2.5">Nominal DANA</th>
+                            <th class="p-2.5">Keuntungan Admin</th>
+                            <th class="p-2.5">Status Pelunasan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-rekap-rinci" class="divide-y divide-slate-900">
+                        <tr>
+                            <td colspan="6" class="text-center py-6 text-slate-500 italic text-xs">Belum ada data rekap untuk bulan ini.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TOTAL KESELURUHAN DI BAWAH -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Pelanggan Valid (≥ Rp 20rb)</p>
+                    <h3 id="rekap-total-pelanggan" class="text-lg font-black text-white mt-1">0 Orang</h3>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Omzet Keseluruhan</p>
+                    <h3 id="rekap-total-omzet" class="text-lg font-black text-sky-400 mt-1">Rp 0</h3>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Keuntungan Bersih (Profit)</p>
+                    <h3 id="rekap-total-profit" class="text-lg font-black text-emerald-400 mt-1">Rp 0</h3>
                 </div>
             </div>
         </section>
 
-        <!-- LAYANAN KAMI -->
-        <section id="services" class="py-20 bg-slate-950 border-b border-slate-800">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="text-sky-400 font-bold text-xs uppercase tracking-widest">Selected Services</span>
-                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-2">Layanan Utama Kami</h2>
-                    <p class="mt-3 text-slate-400 text-sm sm:text-base">Klik salah satu kartu layanan di bawah ini untuk memfilter katalog secara otomatis.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div onclick="selectCategoryFilter('jersey')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-sky-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-tshirt"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">Desain Baju & Jersey</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Desain kustom baju distro, kaos streetwear, jersey esport, & komunitas dengan konsep modern.</p>
-                        <div class="flex items-center text-sky-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Lihat Katalog Desain</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-
-                    <div onclick="selectCategoryFilter('cetak')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-print"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">Produksi & Cetak Baju</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Cetak & produksi kaos/jersey custom. Bahan Cotton Combed 30s & Dryfit Sublimasi.</p>
-                        <div class="flex items-center text-emerald-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Pilih Bahan & Cetak</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-
-                    <div onclick="selectCategoryFilter('logo')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-indigo-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-icons"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">Bikin Logo Branding</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Pembuatan logo profesional & berkarakter untuk online shop, kuliner, tim esports, dll.</p>
-                        <div class="flex items-center text-indigo-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Pilih Paket Logo</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-
-                    <div onclick="selectCategoryFilter('sosmed')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-purple-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">Up Followers & Sosmed</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Tingkatkan kredibilitas & popularitas akun Instagram, TikTok, atau Shopee kamu.</p>
-                        <div class="flex items-center text-purple-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Lihat Paket Sosmed</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-
-                    <div onclick="selectCategoryFilter('poster')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-palette"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">Poster & Grafis Tugas</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Pengerjaan kilat poster edukasi, pamflet event, banner promo, & infografis tugas.</p>
-                        <div class="flex items-center text-amber-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Order Poster Tugas</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-
-                    <div onclick="selectCategoryFilter('grafis')" class="glow-hover cursor-pointer bg-slate-900 border border-slate-800 p-8 rounded-2xl transition-all relative overflow-hidden group">
-                        <div class="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl mb-6 group-hover:bg-rose-500 group-hover:text-slate-950 transition-all">
-                            <i class="fas fa-crop-alt"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-rose-400 transition-colors">Edit Foto & Background PNG</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed mb-6">Jasa edit potong objek foto, hapus background PNG rapi, & retouch foto produk.</p>
-                        <div class="flex items-center text-rose-400 text-xs font-bold gap-2 uppercase tracking-wider">
-                            <span>Order Edit PNG</span>
-                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- KATALOG PRODUK -->
-        <section id="catalog" class="py-20 bg-slate-900/60 border-b border-slate-800">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-                    <div>
-                        <span class="text-emerald-400 font-bold text-xs uppercase tracking-widest">Interactive Store</span>
-                        <h2 class="text-3xl sm:text-4xl font-black text-white mt-1">Katalog Produk & Paket</h2>
-                    </div>
-
-                    <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                        <button type="button" onclick="selectCategoryFilter('all')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-sky-500 text-slate-950 transition-all cursor-pointer">Semua</button>
-                        <button type="button" onclick="selectCategoryFilter('jersey')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Desain Baju</button>
-                        <button type="button" onclick="selectCategoryFilter('cetak')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Produksi Cetak</button>
-                        <button type="button" onclick="selectCategoryFilter('logo')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Logo</button>
-                        <button type="button" onclick="selectCategoryFilter('sosmed')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Sosmed</button>
-                        <button type="button" onclick="selectCategoryFilter('poster')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Poster & Tugas</button>
-                        <button type="button" onclick="selectCategoryFilter('grafis')" class="cat-tab px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer">Edit PNG</button>
-                    </div>
-                </div>
-
-                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                </div>
-            </div>
-        </section>
-
-        <!-- PORTOFOLIO SECTION -->
-        <section id="portfolio" class="py-20 bg-slate-950 border-b border-slate-800">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <span class="text-sky-400 font-bold text-xs uppercase tracking-widest">Our Work</span>
-                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-1">Portofolio Hasil Karya</h2>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800">
-                        <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80" alt="Jersey" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-6 flex flex-col justify-end">
-                            <span class="text-sky-400 text-xs font-bold uppercase">Desain & Cetak Jersey</span>
-                            <h4 class="text-lg font-bold text-white mt-1">Jersey Esports & Streetwear</h4>
-                        </div>
-                    </div>
-                    <div class="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800">
-                        <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80" alt="Logo" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-6 flex flex-col justify-end">
-                            <span class="text-indigo-400 text-xs font-bold uppercase">Brand Identity</span>
-                            <h4 class="text-lg font-bold text-white mt-1">Logo Olshop & Community</h4>
-                        </div>
-                    </div>
-                    <div class="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800">
-                        <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80" alt="Poster" class="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-6 flex flex-col justify-end">
-                            <span class="text-amber-400 text-xs font-bold uppercase">Graphic Design</span>
-                            <h4 class="text-lg font-bold text-white mt-1">Poster Event & Banner Tugas</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
-    <!-- FOOTER -->
-    <footer id="contact" class="bg-slate-950 text-slate-400 border-t border-slate-800 py-12 text-center text-xs">
-        <p>&copy; 2026 PGM STUDIO - All Rights Reserved.</p>
-    </footer>
-
-    <!-- MODAL POPUP DETAIL PRODUK -->
-    <div id="product-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-modal">
-            <div class="relative h-48 bg-slate-800">
-                <img id="modal-product-img" src="" class="w-full h-full object-cover">
-                <button type="button" onclick="closeProductModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-950/80 text-white flex items-center justify-center cursor-pointer">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <h3 id="modal-product-title" class="text-xl font-bold text-white"></h3>
-                    <p id="modal-product-price" class="text-lg font-black text-sky-400 mt-1"></p>
-                    <p id="modal-product-desc" class="text-slate-400 text-xs mt-2"></p>
-                </div>
-
-                <!-- 1. DROPDOWN PAKET -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">1. Pilih Paket / Jenis</label>
-                    <select id="modal-variant-select" onchange="onPackageChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer">
-                    </select>
-                </div>
-
-                <!-- 2. DROPDOWN PCS -->
-                <div id="sub-variant-box">
-                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">2. Pilih Jumlah / Kuantitas (Pcs)</label>
-                    <select id="modal-sub-variant-select" onchange="updateModalPriceByVariant()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer">
-                    </select>
-                </div>
-
-                <!-- 3. CHECKBOX TANPA WATERMARK -->
-                <div>
-                    <label class="flex items-center gap-2 cursor-pointer bg-slate-800/80 p-3 rounded-xl border border-slate-700 hover:border-sky-500 transition-all">
-                        <input type="checkbox" id="modal-addon-watermark" onchange="updateModalPriceByVariant()" class="w-4 h-4 accent-sky-500 rounded cursor-pointer">
-                        <span class="text-xs text-slate-200 font-semibold">Hapus / Tanpa Watermark (+Rp 5.000)</span>
-                    </label>
-                </div>
-
-                <!-- 4. CATATAN -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Catatan Kustomisasi</label>
-                    <textarea id="modal-custom-note" placeholder="Tuliskan detail request kamu..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500"></textarea>
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="addModalItemToCart()" class="flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs cursor-pointer">
-                        + Keranjang
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. CART SIDE DRAWER (KERANJANG BELANJA) -->
-    <div id="cart-drawer" class="fixed inset-0 z-50 hidden">
-        <div onclick="toggleCartDrawer(false)" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm cursor-pointer"></div>
-        
-        <div id="cart-panel" class="fixed inset-y-0 right-0 max-w-md w-full bg-slate-900 border-l border-slate-800 p-6 flex flex-col justify-between shadow-2xl z-50">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-shopping-bag text-sky-400 text-lg"></i>
-                    <h3 class="text-lg font-bold text-white">Keranjang Belanja</h3>
-                </div>
-                <button type="button" onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-white cursor-pointer">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
-            </div>
-
-            <div id="cart-items-container" class="flex-1 overflow-y-auto py-4 space-y-3">
-            </div>
-
-            <div class="border-t border-slate-800 pt-4 space-y-3">
-                <div class="flex justify-between text-sm font-bold text-white">
-                    <span>Total Pembayaran:</span>
-                    <span id="cart-total-text" class="text-sky-400 font-black">Rp 0</span>
-                </div>
-                <button type="button" onclick="proceedToWhatsAppCheckout()" id="btn-checkout" disabled class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-black text-sm cursor-pointer transition-all">
-                    Checkout via WhatsApp
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT SYSTEM UTUH -->
     <script>
-        const CATALOG_PRODUCTS = [
-            { 
-                id: 'p1', 
-                category: 'jersey', 
-                title: 'Jasa Desain Baju & Jersey Custom', 
-                badge: 'BESTSELLER', 
-                rating: 5.0, 
-                sold: 142, 
-                image: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=800&q=80', 
-                desc: 'Desain kustom baju distro & jersey esport. Mockup 3D + File siap cetak.', 
-                variantOptions: [
-                    { 
-                        name: 'Paket Basic (1 Konsep)', 
-                        tiers: [ { qtyText: '1 Desain Fixed', price: 35000 } ] 
-                    },
-                    { 
-                        name: 'Paket Premium (2 Konsep)', 
-                        tiers: [ { qtyText: '2 Konsep + Vector File', price: 50000 } ] 
-                    },
-                    { 
-                        name: 'Paket Complete', 
-                        tiers: [ { qtyText: 'Siap Print + Master File AI/PSD', price: 75000 } ] 
-                    }
-                ] 
-            },
-            { 
-                id: 'p2', 
-                category: 'cetak', 
-                title: 'Cetak & Produksi Kaos Custom', 
-                badge: 'PROMO', 
-                rating: 4.9, 
-                sold: 98, 
-                image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&q=80', 
-                desc: 'Bahan Cotton Combed 30s + Sablon DTF High Quality.', 
-                variantOptions: [
-                    { 
-                        name: 'Bronze Pack (Satuan & Komunitas)', 
-                        tiers: [
-                            { qtyText: '6 - 11 pcs', price: 120000 },
-                            { qtyText: '12 - 24 pcs', price: 110000 },
-                            { qtyText: '25 - 50 pcs', price: 100000 },
-                            { qtyText: '> 50 pcs', price: 90000 }
-                        ] 
-                    },
-                    { 
-                        name: 'Silver Pack (Cotton Combed 24s)', 
-                        tiers: [
-                            { qtyText: '6 - 11 pcs', price: 135000 },
-                            { qtyText: '12 - 24 pcs', price: 125000 },
-                            { qtyText: '> 24 pcs', price: 115000 }
-                        ] 
-                    },
-                    { 
-                        name: 'Gold Pack (Dryfit Sublimation Full Print)', 
-                        tiers: [
-                            { qtyText: '6 - 11 pcs', price: 150000 },
-                            { qtyText: '12 - 24 pcs', price: 140000 },
-                            { qtyText: '> 24 pcs', price: 130000 }
-                        ] 
-                    }
-                ] 
-            },
-            { 
-                id: 'p3', 
-                category: 'logo', 
-                title: 'Desain Logo Olshop & Brand', 
-                badge: 'POPULER', 
-                rating: 5.0, 
-                sold: 215, 
-                image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80', 
-                desc: 'Logo unik & berkarakter format HD Siap Pakai.', 
-                variantOptions: [
-                    { name: 'Paket Starter (PNG/JPG)', tiers: [ { qtyText: 'Standard HD', price: 50000 } ] }
-                ] 
-            },
-            { 
-                id: 'p4', 
-                category: 'sosmed', 
-                title: 'Boost Followers Instagram', 
-                badge: 'INSTANT', 
-                rating: 4.8, 
-                sold: 340, 
-                image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80', 
-                desc: 'Tingkatkan kredibilitas akun sosmed tanpa butuh password.', 
-                variantOptions: [
-                    { name: 'Followers Mix Active', tiers: [
-                        { qtyText: '1.000 Followers', price: 25000 },
-                        { qtyText: '2.500 Followers', price: 55000 },
-                        { qtyText: '5.000 Followers', price: 100000 }
-                    ]}
-                ] 
-            },
-            { 
-                id: 'p5', 
-                category: 'poster', 
-                title: 'Desain Poster & Pamflet Tugas', 
-                badge: 'PELAJAR', 
-                rating: 4.9, 
-                sold: 185, 
-                image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80', 
-                desc: 'Poster edukasi, pamflet event, & infografis tugas kilat.', 
-                variantOptions: [
-                    { name: 'Digital Poster (Sosmed)', tiers: [{ qtyText: 'Per Layout', price: 20000 }] },
-                    { name: 'Print Ready Poster (High Res)', tiers: [{ qtyText: 'A4/A3 Size', price: 30000 }] },
-                    { name: 'Infografis Ringkas', tiers: [{ qtyText: 'Lengkap Data', price: 40000 }] }
-                ] 
-            },
-            { 
-                id: 'p6', 
-                category: 'grafis', 
-                title: 'Edit Foto & Hapus Background PNG', 
-                badge: 'MURAH', 
-                rating: 4.8, 
-                sold: 130, 
-                image: 'https://images.unsplash.com/photo-1542744094-3a31b272c490?w=800&q=80', 
-                desc: 'Hapus background rapi PNG, retouch foto produk, dll.', 
-                variantOptions: [
-                    { name: 'Paket Hapus BG', tiers: [
-                        { qtyText: '1 - 3 Foto', price: 10000 },
-                        { qtyText: '5 Foto Paket Hemat', price: 18000 },
-                        { qtyText: '10 Foto Produk', price: 30000 }
-                    ]}
-                ] 
-            }
-        ];
+        const firebaseConfig = {
+            apiKey: "AIzaSyAm-kLBcojA_-mIuyo34Vnt9T7Oo_2jR0A",
+            authDomain: "pgm-express.firebaseapp.com",
+            databaseURL: "https://pgm-express-default-rtdb.firebaseio.com",
+            projectId: "pgm-express",
+            storageBucket: "pgm-express.firebasestorage.app",
+            messagingSenderId: "851226580579",
+            appId: "1:851226580579:web:5e48a3d1d32957d2a28a56",
+            measurementId: "G-D6PMCZ9QSZ"
+        };
 
-        let shoppingCart = [];
-        let selectedModalProduct = null;
-        let activeVariantPrice = 0;
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const kasbonRef = database.ref('kasbon_list');
+        const adminAccRef = database.ref('admin_ktp_acc');
 
-        function renderCatalog(categoryFilter = 'all') {
-            const container = document.getElementById('product-grid');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const filteredProducts = categoryFilter === 'all' 
-                ? CATALOG_PRODUCTS 
-                : CATALOG_PRODUCTS.filter(item => item.category === categoryFilter);
-
-            filteredProducts.forEach(product => {
-                const firstOption = product.variantOptions[0];
-                const basePrice = (firstOption && firstOption.tiers && firstOption.tiers[0]) 
-                    ? firstOption.tiers[0].price 
-                    : (firstOption.price || 0);
-
-                const card = document.createElement('div');
-                card.className = 'glow-hover bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between transition-all';
-                card.innerHTML = `
-                    <div>
-                        <div class="relative h-48 overflow-hidden bg-slate-800">
-                            <img src="${product.image}" class="w-full h-full object-cover" alt="${product.title}">
-                            <span class="absolute top-3 left-3 badge-premium text-[10px] px-2.5 py-1 rounded-full uppercase">${product.badge}</span>
-                        </div>
-                        <div class="p-5">
-                            <h3 class="text-sm font-bold text-white">${product.title}</h3>
-                            <p class="text-slate-400 text-xs mt-1 leading-relaxed">${product.desc}</p>
-                            <div class="mt-4 text-base font-black text-emerald-400">Mulai Rp ${basePrice.toLocaleString('id-ID')}</div>
-                        </div>
-                    </div>
-                    <div class="px-5 pb-5 flex gap-2">
-                        <button type="button" onclick="openProductModal('${product.id}')" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all cursor-pointer">Detail / Pesan</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function selectCategoryFilter(category) {
-            renderCatalog(category);
-            const catalogElem = document.getElementById('catalog');
-            if (catalogElem) catalogElem.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function openProductModal(productId) {
-            selectedModalProduct = CATALOG_PRODUCTS.find(p => p.id === productId);
-            if (!selectedModalProduct) return;
-
-            document.getElementById('modal-product-img').src = selectedModalProduct.image;
-            document.getElementById('modal-product-title').innerText = selectedModalProduct.title;
-            document.getElementById('modal-product-desc').innerText = selectedModalProduct.desc;
-
-            const packageSelect = document.getElementById('modal-variant-select');
-            packageSelect.innerHTML = '';
-            
-            selectedModalProduct.variantOptions.forEach((pkg, index) => {
-                const opt = document.createElement('option');
-                opt.value = index;
-                opt.innerText = pkg.name;
-                packageSelect.appendChild(opt);
-            });
-
-            const watermarkCheck = document.getElementById('modal-addon-watermark');
-            if (watermarkCheck) watermarkCheck.checked = false;
-
-            onPackageChange();
-
-            const modal = document.getElementById('product-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function onPackageChange() {
-            if (!selectedModalProduct) return;
-            const pkgIndex = document.getElementById('modal-variant-select').value;
-            const selectedPackage = selectedModalProduct.variantOptions[pkgIndex];
-
-            const subSelect = document.getElementById('modal-sub-variant-select');
-            subSelect.innerHTML = '';
-
-            if (selectedPackage && selectedPackage.tiers) {
-                selectedPackage.tiers.forEach((tier, tIndex) => {
-                    const opt = document.createElement('option');
-                    opt.value = tIndex;
-                    opt.innerText = `${tier.qtyText} - Rp ${tier.price.toLocaleString('id-ID')}`;
-                    subSelect.appendChild(opt);
-                });
-            }
-
-            updateModalPriceByVariant();
-        }
-
-        function updateModalPriceByVariant() {
-            if (!selectedModalProduct) return;
-            const pkgIndex = document.getElementById('modal-variant-select').value;
-            const tierIndex = document.getElementById('modal-sub-variant-select').value;
-
-            const selectedPackage = selectedModalProduct.variantOptions[pkgIndex];
-            if (selectedPackage && selectedPackage.tiers && selectedPackage.tiers[tierIndex]) {
-                let price = selectedPackage.tiers[tierIndex].price;
-                
-                const watermarkCheck = document.getElementById('modal-addon-watermark');
-                if (watermarkCheck && watermarkCheck.checked) {
-                    price += 5000;
-                }
-
-                activeVariantPrice = price;
-                document.getElementById('modal-product-price').innerText = `Rp ${activeVariantPrice.toLocaleString('id-ID')}`;
-            }
-        }
-
-        function closeProductModal() {
-            const modal = document.getElementById('product-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function addModalItemToCart() {
-            if (!selectedModalProduct) return;
-            const pkgIndex = document.getElementById('modal-variant-select').value;
-            const tierIndex = document.getElementById('modal-sub-variant-select').value;
-
-            const selectedPackage = selectedModalProduct.variantOptions[pkgIndex];
-            const selectedTier = selectedPackage.tiers[tierIndex];
-            const note = document.getElementById('modal-custom-note').value;
-            const isNoWatermark = document.getElementById('modal-addon-watermark').checked;
-
-            let variantName = `${selectedPackage.name} (${selectedTier.qtyText})`;
-            if (isNoWatermark) {
-                variantName += ' + Tanpa Watermark';
-            }
-
-            shoppingCart.push({ 
-                title: selectedModalProduct.title, 
-                variant: variantName, 
-                price: activeVariantPrice, 
-                note: note 
-            });
-
-            updateCartUI();
-            closeProductModal();
-            toggleCartDrawer(true);
-        }
-
-        function toggleCartDrawer(open) {
-            const drawer = document.getElementById('cart-drawer');
-            if (!drawer) return;
-
-            if (open) {
-                drawer.classList.remove('hidden');
-                drawer.classList.add('block');
-            } else {
-                drawer.classList.add('hidden');
-                drawer.classList.remove('block');
-            }
-        }
-
-        function updateCartUI() {
-            const container = document.getElementById('cart-items-container');
-            const badge = document.getElementById('cart-badge-count');
-            const totalText = document.getElementById('cart-total-text');
-            const checkoutBtn = document.getElementById('btn-checkout');
-
-            if (badge) badge.innerText = shoppingCart.length;
-
-            if (!container) return;
-
-            if (shoppingCart.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">Keranjang belanjaanmu kosong.</p>`;
-                if (checkoutBtn) checkoutBtn.disabled = true;
-                if (totalText) totalText.innerText = 'Rp 0';
-            } else {
-                if (checkoutBtn) checkoutBtn.disabled = false;
-                container.innerHTML = '';
-                let total = 0;
-
-                shoppingCart.forEach((item, index) => {
-                    total += item.price;
-                    const elem = document.createElement('div');
-                    elem.className = 'bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs';
-                    elem.innerHTML = `
-                        <div>
-                            <h4 class="font-bold text-white">${item.title}</h4>
-                            <p class="text-sky-400 font-semibold">${item.variant}</p>
-                            <p class="text-emerald-400 font-bold mt-1">Rp ${item.price.toLocaleString('id-ID')}</p>
-                            ${item.note ? `<p class="text-[10px] text-slate-400 italic mt-0.5">"${item.note}"</p>` : ''}
-                        </div>
-                        <button type="button" onclick="shoppingCart.splice(${index}, 1); updateCartUI();" class="text-slate-500 hover:text-rose-400 cursor-pointer p-1">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                    container.appendChild(elem);
-                });
-
-                if (totalText) totalText.innerText = `Rp ${total.toLocaleString('id-ID')}`;
-            }
-        }
-
-        function proceedToWhatsAppCheckout() {
-            if (shoppingCart.length === 0) return;
-
-            let msg = `*HALO ADMIN PGM STUDIO, SAYA MAU ORDER!* 🚀\n\n*RINCIAN PESANAN:*\n`;
-            let total = 0;
-
-            shoppingCart.forEach((item, idx) => {
-                total += item.price;
-                msg += `${idx + 1}. *${item.title}*\n`;
-                msg += `   - Opsi Paket: ${item.variant}\n`;
-                msg += `   - Harga: Rp ${item.price.toLocaleString('id-ID')}\n`;
-                if (item.note) msg += `   - Catatan: ${item.note}\n`;
-                msg += `\n`;
-            });
-
-            msg += `*TOTAL BAYAR: Rp ${total.toLocaleString('id-ID')}*`;
-            
-            window.open(`https://wa.me/6285786457121?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            if (menu) menu.classList.toggle('hidden');
-        }
+        const PIN_ADMIN = "065147";
+        let listKasbonGlobal = [];
 
         window.onload = function() {
-            renderCatalog('all');
-            updateCartUI();
+            if (sessionStorage.getItem('pgm_admin_authenticated') === 'true') {
+                document.getElementById('admin-lock-overlay').classList.add('hidden');
+            }
+            inisialisasiDropdownBulan();
         };
+
+        function verifikasiPinAdmin() {
+            const inputPin = document.getElementById('input-pin-admin').value;
+            if (inputPin === PIN_ADMIN) {
+                sessionStorage.setItem('pgm_admin_authenticated', 'true');
+                document.getElementById('admin-lock-overlay').classList.add('hidden');
+            } else {
+                document.getElementById('error-pin').classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('pgm_admin_authenticated');
+            location.reload();
+        }
+
+        adminAccRef.on('value', (snapshot) => {
+            const val = snapshot.val();
+            const isAcc = (typeof val === 'boolean') ? val : (val && val.isAcc === true);
+            const statKtp = document.getElementById('stat-ktp');
+            if (statKtp) {
+                if (isAcc) {
+                    statKtp.innerText = "ACC Aktif";
+                    statKtp.className = "text-sm font-black text-emerald-400 mt-1";
+                } else {
+                    statKtp.innerText = "Terkunci";
+                    statKtp.className = "text-sm font-black text-sky-400 mt-1";
+                }
+            }
+        });
+
+        kasbonRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            listKasbonGlobal = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    listKasbonGlobal.unshift({ keyId: key, ...data[key] });
+                });
+            }
+            renderTabelAdmin();
+            renderRekapBulanan();
+        });
+
+        function generateTokenUnik() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let token = 'PGM-';
+            for (let i = 0; i < 4; i++) {
+                token += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return token;
+        }
+
+        function setAccKtpOnly(keyId) {
+            const itemTarget = listKasbonGlobal.find(item => item.keyId === keyId);
+            if (itemTarget) {
+                database.ref('kasbon_list/' + keyId).update({ status: 'ACC', statusAcc: 'ACC', waAccSent: false });
+                adminAccRef.set({ isAcc: true, nama: itemTarget.nama || '', noHp: itemTarget.noHp || '', updatedAt: Date.now() });
+                alert(`✅ KTP untuk ${itemTarget.nama || 'Pembeli'} BERHASIL DI-ACC!`);
+            }
+        }
+
+        function kirimTokenWhatsApp(keyId) {
+            const itemTarget = listKasbonGlobal.find(item => item.keyId === keyId);
+            if (itemTarget) {
+                const tokenDiskonOtomatis = generateTokenUnik();
+                const targetWa = itemTarget.noHp || itemTarget.whatsapp || '';
+                
+                database.ref('tokens/' + tokenDiskonOtomatis).set({ 
+                    code: tokenDiskonOtomatis, 
+                    isUsed: false, 
+                    targetWa: targetWa, 
+                    createdAt: new Date().toISOString() 
+                });
+                
+                database.ref('kasbon_list/' + keyId).update({ tokenDiskon: tokenDiskonOtomatis });
+
+                if (targetWa) {
+                    let cleanWa = targetWa.replace(/^0/, '62');
+                    let pesanWa = `*HALO KAK ${itemTarget.nama || 'Pelanggan'}!* 🎉\n\n` +
+                                  `Anda mendapatkan *Token Diskon Admin PGM Express* untuk potongan biaya admin kasbon!\n\n` +
+                                  `🔑 *Kode Token Anda*: \`${tokenDiskonOtomatis}\`\n\n` +
+                                  `Masukkan token ini pada halaman formulir untuk memotong biaya admin kasbon Anda menjadi Rp 5.000. Terima kasih telah berlangganan di PGM Express! 🚀`;
+                    
+                    window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(pesanWa)}`, '_blank');
+                } else {
+                    alert(`🎉 Token Diskon [${tokenDiskonOtomatis}] berhasil dibuat!`);
+                }
+            }
+        }
+
+        function setLunas(keyId) {
+            database.ref('kasbon_list/' + keyId).update({ status: 'LUNAS' });
+        }
+
+        function hapusNota(keyId) {
+            if (confirm("Hapus data transaksi ini?")) {
+                database.ref('kasbon_list/' + keyId).remove();
+            }
+        }
+
+        function lihatKtp(base64Image, namaPemohon, emailPemohon) {
+            if (!base64Image) return alert("Foto KTP tidak ditemukan.");
+            document.getElementById('modal-ktp-img').src = base64Image;
+            document.getElementById('modal-ktp-nama').innerText = `Pemohon: ${namaPemohon} (${emailPemohon})`;
+            document.getElementById('modal-ktp-download').href = base64Image;
+            document.getElementById('modal-ktp').classList.remove('hidden');
+        }
+
+        function tutupModalKtp() {
+            document.getElementById('modal-ktp').classList.add('hidden');
+        }
+
+        function lihatDetailLokasi(jsonString) {
+            try {
+                const t = JSON.parse(decodeURIComponent(jsonString));
+                const container = document.getElementById('konten-detail-lokasi');
+                
+                let mapsButton = '';
+                if (t.latitude && t.longitude) {
+                    mapsButton = `
+                        <a href="https://www.google.com/maps?q=${t.latitude},${t.longitude}" target="_blank" class="mt-3 block w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs text-center transition">
+                            <i class="fas fa-map-marked-alt mr-1"></i> Buka Titik GPS di Google Maps
+                        </a>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <p><b>Metode:</b> <span class="text-sky-400 font-mono">${t.ip || 'GPS Akurat'}</span></p>
+                    <p><b>Titik Koordinat:</b> ${t.city || '-'}</p>
+                    <p><b>Keterangan:</b> ${t.region || '-'}</p>
+                    <p><b>Status Izin:</b> ${t.isp || '-'}</p>
+                    <p class="pt-2 border-t border-slate-800"><b>Perangkat / Browser:</b> <span class="text-[10px] text-slate-400 block break-all">${t.userAgent || '-'}</span></p>
+                    ${mapsButton}
+                `;
+                document.getElementById('modal-lokasi').classList.remove('hidden');
+            } catch (e) {
+                alert("Data lokasi GPS tidak tersedia.");
+            }
+        }
+
+        function tutupModalLokasi() {
+            document.getElementById('modal-lokasi').classList.add('hidden');
+        }
+
+        function renderTabelAdmin() {
+            const tbody = document.getElementById('admin-tabel-body');
+            if (!tbody) return;
+
+            let pendingCount = 0;
+            let lunasCount = 0;
+
+            if (listKasbonGlobal.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-500 italic text-xs">Belum ada data transaksi.</td></tr>`;
+                document.getElementById('stat-pending').innerText = 0;
+                document.getElementById('stat-lunas').innerText = 0;
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            listKasbonGlobal.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50 transition-colors";
+
+                const isLunas = item.status === 'LUNAS' || item.status === 'LUNAS (DIRECT)';
+                const isAcc = item.status === 'ACC' || item.statusAcc === 'ACC';
+                const isMenungguAcc = item.status === 'MENUNGGU ACC KTP' || item.status === 'PENDING';
+
+                if (isLunas) lunasCount++;
+                else if (!isMenungguAcc) pendingCount++;
+
+                let totalAkhir = item.total || 0;
+
+                let buttonKtp = item.fotoKtpBase64 ? `
+                    <button onclick="lihatKtp('${item.fotoKtpBase64}', '${item.nama}', '${item.user_email}')" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] transition cursor-pointer flex items-center justify-center gap-1 mx-auto shadow">
+                        <i class="fas fa-eye"></i> Lihat KTP
+                    </button>
+                ` : `<span class="text-slate-500 text-[10px] italic">Tanpa Foto</span>`;
+
+                let buttonLokasi = "-";
+                if (item.tracking) {
+                    const encodedTracking = encodeURIComponent(JSON.stringify(item.tracking));
+                    buttonLokasi = `
+                        <button onclick="lihatDetailLokasi('${encodedTracking}')" class="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 font-bold text-[10px] transition cursor-pointer flex items-center justify-center gap-1 mx-auto">
+                            <i class="fas fa-map-marker-alt"></i> Cek GPS Maps
+                        </button>
+                    `;
+                }
+
+                let statusBadge = "";
+                if (isLunas) statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LUNAS</span>`;
+                else if (isAcc) statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"><i class="fas fa-check-circle mr-1"></i>DI-ACC</span>`;
+                else if (isMenungguAcc) statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/40 animate-pulse"><i class="fas fa-clock mr-1"></i>MENUNGGU ACC</span>`;
+                else statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20">BELUM LUNAS</span>`;
+
+                let aksiButtons = "";
+                if (isMenungguAcc) {
+                    aksiButtons += `<button onclick="setAccKtpOnly('${item.keyId}')" class="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] transition cursor-pointer flex items-center gap-1 shadow"><i class="fas fa-check-circle"></i> ACC</button>`;
+                }
+                aksiButtons += `<button onclick="kirimTokenWhatsApp('${item.keyId}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition cursor-pointer flex items-center gap-1"><i class="fab fa-whatsapp"></i> WA Token</button>`;
+                if (!isLunas && !isMenungguAcc) {
+                    aksiButtons += `<button onclick="setLunas('${item.keyId}')" class="px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] transition cursor-pointer">Lunas</button>`;
+                }
+                aksiButtons += `<button onclick="hapusNota('${item.keyId}')" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 font-bold text-[11px] transition cursor-pointer">Hapus</button>`;
+
+                const noWaDisplay = item.noHp || item.whatsapp || '-';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 text-[11px]">${item.tanggal || '-'}</td>
+                    <td class="p-3 text-[11px]">${item.jenis === 'KASBON' ? '[Kasbon] ' + (item.jatuhTempoStr || '-') : '[Direct] Cash'}</td>
+                    <td class="p-3 font-bold text-white">
+                        <div>${item.nama || '-'}</div>
+                        <div class="text-[9px] text-amber-400 font-mono">${item.user_email || '-'}</div>
+                    </td>
+                    <td class="p-3 font-mono text-emerald-400 font-bold">${noWaDisplay}</td>
+                    <td class="p-3 font-mono text-sky-400">${item.dana || '-'}</td>
+                    <td class="p-3 font-extrabold text-emerald-400">Rp ${totalAkhir.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center">${buttonLokasi}</td>
+                    <td class="p-3 text-center">${buttonKtp}</td>
+                    <td class="p-3">${statusBadge}</td>
+                    <td class="p-3 text-center flex items-center justify-center gap-1.5 flex-wrap">${aksiButtons}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('stat-pending').innerText = pendingCount;
+            document.getElementById('stat-lunas').innerText = lunasCount;
+        }
+
+        function inisialisasiDropdownBulan() {
+            const selectBulan = document.getElementById('filter-bulan-rekap');
+            if (!selectBulan) return;
+
+            const daftarBulan = [
+                { val: '2026-11', label: 'November 2026' },
+                { val: '2026-12', label: 'Desember 2026' },
+                { val: '2027-01', label: 'Januari 2027' },
+                { val: '2027-02', label: 'Februari 2027' },
+                { val: '2027-03', label: 'Maret 2027' }
+            ];
+
+            selectBulan.innerHTML = '';
+            const sekarangStr = '2026-11';
+
+            daftarBulan.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.val;
+                opt.innerText = b.label;
+                if (b.val === sekarangStr) opt.selected = true;
+                selectBulan.appendChild(opt);
+            });
+        }
+
+        // FUNGSI RENDER REKAP RINCI PER BARIS (FILTER NOMINAL >= 20.000)
+        function renderRekapBulanan() {
+            const selectBulan = document.getElementById('filter-bulan-rekap');
+            const tbodyRinci = document.getElementById('tabel-rekap-rinci');
+            if (!selectBulan || !tbodyRinci) return;
+
+            tbodyRinci.innerHTML = '';
+
+            let totalPelangganValid = 0;
+            let totalOmzet = 0;
+            let totalProfit = 0;
+
+            let adaData = false;
+
+            listKasbonGlobal.forEach(item => {
+                let nominal = Number(item.nominal || 0);
+
+                // ATURAN: Nominal di bawah Rp 20.000 (seperti 10.000 atau KTP doang) jangan dimasukkan ke rekapan
+                if (nominal < 20000) {
+                    return; 
+                }
+
+                adaData = true;
+                totalPelangganValid++;
+
+                let totalTrans = Number(item.total || (nominal + (item.jenis === 'KASBON' ? 10000 : 3500)));
+                let feeAdmin = item.jenis === 'KASBON' ? (item.tokenDiskonUsed ? 5000 : 10000) : 3500;
+
+                totalOmzet += totalTrans;
+                totalProfit += feeAdmin;
+
+                const isLunas = item.status === 'LUNAS' || item.status === 'LUNAS (DIRECT)';
+                let statusRincianBadge = isLunas ? 
+                    `<span class="text-emerald-400 font-bold">Lunas</span>` : 
+                    `<span class="text-amber-400 font-bold">Belum Lunas</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/50";
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-400 text-[11px]">${item.tanggal || '-'}</td>
+                    <td class="p-2.5 font-bold text-white">${item.nama || '-'}</td>
+                    <td class="p-2.5 font-mono text-emerald-400">${item.noHp || item.whatsapp || '-'}</td>
+                    <td class="p-2.5 font-mono text-sky-400">Rp ${nominal.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 font-mono text-amber-400 font-bold">+Rp ${feeAdmin.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5">${statusRincianBadge}</td>
+                `;
+                tbodyRinci.appendChild(tr);
+            });
+
+            if (!adaData) {
+                tbodyRinci.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 italic text-xs">Tidak ada transaksi dengan nominal di atas Rp 20.000 untuk direkap.</td></tr>`;
+            }
+
+            document.getElementById('rekap-total-pelanggan').innerText = `${totalPelangganValid} Orang`;
+            document.getElementById('rekap-total-omzet').innerText = `Rp ${totalOmzet.toLocaleString('id-ID')}`;
+            document.getElementById('rekap-total-profit').innerText = `Rp ${totalProfit.toLocaleString('id-ID')}`;
+        }
     </script>
 </body>
 </html>
