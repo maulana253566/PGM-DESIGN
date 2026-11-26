@@ -96,7 +96,7 @@
     <!-- KONTEN UTAMA -->
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-8 flex-1 w-full">
 
-        <!-- RINGKASAN STATISTIK + SAKLAR BOT WA -->
+        <!-- RINGKASAN STATISTIK + SAKLAR BOT WA & RESTART -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
                 <div>
@@ -126,14 +126,19 @@
                 </div>
             </div>
 
-            <!-- SAKLAR ON / OFF BOT WA -->
-            <div id="card-saklar-bot" class="bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-xs text-slate-400 font-bold uppercase">Saklar Bot WA</p>
-                    <h3 id="status-bot-teks" class="text-sm font-black text-emerald-400 mt-1">BOT ON (Aktif)</h3>
+            <!-- KONTROL BOT WA: SAKLAR ON/OFF + TOMBOL RESTART -->
+            <div id="card-saklar-bot" class="bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl flex flex-col justify-between gap-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-400 font-bold uppercase">Saklar Bot WA</p>
+                        <h3 id="status-bot-teks" class="text-sm font-black text-emerald-400 mt-0.5">BOT ON (Aktif)</h3>
+                    </div>
+                    <button type="button" id="btn-toggle-bot" onclick="toggleBotWhatsApp()" class="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-[11px] transition cursor-pointer shadow flex items-center gap-1.5">
+                        <i class="fas fa-power-off"></i> <span id="label-tombol-bot">Matikan</span>
+                    </button>
                 </div>
-                <button type="button" id="btn-toggle-bot" onclick="toggleBotWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition cursor-pointer shadow flex items-center gap-1.5">
-                    <i class="fas fa-power-off"></i> <span id="label-tombol-bot">Matikan</span>
+                <button type="button" id="btn-restart-bot" onclick="restartBotWhatsApp()" class="w-full py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500 text-sky-300 hover:text-slate-950 border border-sky-500/40 font-black text-[11px] transition cursor-pointer flex items-center justify-center gap-1.5">
+                    <i class="fas fa-rotate-right"></i> <span id="label-restart-bot">Restart Bot (Tanpa PM2)</span>
                 </button>
             </div>
         </div>
@@ -255,6 +260,7 @@
         const kasbonRef = database.ref('kasbon_list');
         const adminAccRef = database.ref('admin_ktp_acc');
         const botLiburRef = database.ref('bot_status/libur_dadakan');
+        const botRestartRef = database.ref('bot_status/restart_request');
 
         const PIN_ADMIN = "065147";
         let listKasbonGlobal = [];
@@ -297,16 +303,16 @@
             const label = document.getElementById('label-tombol-bot');
 
             if (isBotLiburDadakan) {
-                card.className = "bg-slate-900 border border-rose-500/40 p-5 rounded-2xl flex items-center justify-between gap-3";
+                card.className = "bg-slate-900 border border-rose-500/40 p-5 rounded-2xl flex flex-col justify-between gap-3";
                 teks.innerText = "BOT OFF (Libur)";
-                teks.className = "text-sm font-black text-rose-400 mt-1";
-                btn.className = "px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition cursor-pointer shadow flex items-center gap-1.5";
+                teks.className = "text-sm font-black text-rose-400 mt-0.5";
+                btn.className = "px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] transition cursor-pointer shadow flex items-center gap-1.5";
                 label.innerText = "Nyalakan";
             } else {
-                card.className = "bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl flex items-center justify-between gap-3";
+                card.className = "bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl flex flex-col justify-between gap-3";
                 teks.innerText = "BOT ON (Aktif)";
-                teks.className = "text-sm font-black text-emerald-400 mt-1";
-                btn.className = "px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-xs transition cursor-pointer shadow flex items-center gap-1.5";
+                teks.className = "text-sm font-black text-emerald-400 mt-0.5";
+                btn.className = "px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-[11px] transition cursor-pointer shadow flex items-center gap-1.5";
                 label.innerText = "Matikan";
             }
         }
@@ -314,6 +320,29 @@
         function toggleBotWhatsApp() {
             const statusBaru = !isBotLiburDadakan;
             botLiburRef.set(statusBaru);
+        }
+
+        // TOMBOL RESTART BOT WA OTOMATIS (TANPA KETIK PM2 RESTART)
+        function restartBotWhatsApp() {
+            if (!confirm("Restart Bot WhatsApp sekarang? Bot akan memuat ulang koneksi otomatis dalam beberapa detik.")) return;
+
+            const btnRestart = document.getElementById('btn-restart-bot');
+            const labelRestart = document.getElementById('label-restart-bot');
+            btnRestart.disabled = true;
+            labelRestart.innerText = "Merestart Bot...";
+
+            botRestartRef.set({
+                requestedAt: Date.now()
+            }).then(() => {
+                setTimeout(() => {
+                    btnRestart.disabled = false;
+                    labelRestart.innerText = "Restart Bot (Tanpa PM2)";
+                }, 4000);
+            }).catch((err) => {
+                alert("Gagal mengirim perintah restart: " + err.message);
+                btnRestart.disabled = false;
+                labelRestart.innerText = "Restart Bot (Tanpa PM2)";
+            });
         }
 
         adminAccRef.on('value', (snapshot) => {
