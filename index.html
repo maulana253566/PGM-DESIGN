@@ -171,13 +171,13 @@
                 </h2>
                 <div class="flex items-center gap-2">
                     <label for="filter-bulan-rekap" class="text-xs text-slate-400 font-bold">Pilih Bulan:</label>
-                    <select id="filter-bulan-rekap" onchange="renderRekapBulanan()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-bold">
+                    <select id="filter-bulan-rekap" onchange="gantiBulanRekap()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-bold">
                         <!-- Opsi bulan di-generate otomatis -->
                     </select>
                 </div>
             </div>
 
-            <!-- TABEL RINCIAN PER BARIS (MENAMPILKAN NAMA SATU PERSATU) -->
+            <!-- TABEL RINCIAN PER BARIS -->
             <div class="overflow-x-auto no-scrollbar border border-slate-800 rounded-xl bg-slate-950 p-2">
                 <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-900 text-slate-400 uppercase text-[9px] font-bold border-b border-slate-800">
@@ -198,19 +198,29 @@
                 </table>
             </div>
 
-            <!-- TOTAL KESELURUHAN DI BAWAH -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950 border border-slate-800 p-4 rounded-xl">
+            <!-- TOTAL KESELURUHAN + PERHITUNGAN UANG PAJAK -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 bg-slate-950 border border-slate-800 p-4 rounded-xl items-center">
                 <div>
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Pelanggan Valid (≥ Rp 20rb)</p>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Pelanggan (≥ Rp 20rb)</p>
                     <h3 id="rekap-total-pelanggan" class="text-lg font-black text-white mt-1">0 Orang</h3>
                 </div>
                 <div>
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Omzet Keseluruhan</p>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Omzet</p>
                     <h3 id="rekap-total-omzet" class="text-lg font-black text-sky-400 mt-1">Rp 0</h3>
                 </div>
                 <div>
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total Keuntungan Bersih (Profit)</p>
-                    <h3 id="rekap-total-profit" class="text-lg font-black text-emerald-400 mt-1">Rp 0</h3>
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Untung Kotor (Admin)</p>
+                    <h3 id="rekap-total-profit" class="text-lg font-black text-amber-400 mt-1">Rp 0</h3>
+                </div>
+                <div>
+                    <label for="input-uang-pajak" class="block text-[10px] text-rose-400 uppercase font-bold mb-1">
+                        <i class="fas fa-receipt mr-1"></i> Uang Pajak (Ketik Sendiri):
+                    </label>
+                    <input type="number" id="input-uang-pajak" oninput="hitungProfitBersih()" placeholder="0" class="w-full bg-slate-900 border border-rose-500/40 rounded-lg px-3 py-1.5 text-sm font-extrabold text-rose-400 font-mono focus:outline-none focus:border-rose-400">
+                </div>
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl">
+                    <p class="text-[10px] text-emerald-300 uppercase font-bold">Sisa Untung Bersih Saya</p>
+                    <h3 id="rekap-profit-bersih-akhir" class="text-lg font-black text-emerald-400 mt-0.5">Rp 0</h3>
                 </div>
             </div>
         </section>
@@ -236,12 +246,14 @@
 
         const PIN_ADMIN = "065147";
         let listKasbonGlobal = [];
+        let totalProfitKotorSaatIni = 0;
 
         window.onload = function() {
             if (sessionStorage.getItem('pgm_admin_authenticated') === 'true') {
                 document.getElementById('admin-lock-overlay').classList.add('hidden');
             }
             inisialisasiDropdownBulan();
+            muatPajakTersimpan();
         };
 
         function verifikasiPinAdmin() {
@@ -322,9 +334,9 @@
                 if (targetWa) {
                     let cleanWa = targetWa.replace(/^0/, '62');
                     let pesanWa = `*HALO KAK ${itemTarget.nama || 'Pelanggan'}!* 🎉\n\n` +
-                                  `Anda mendapatkan *Token Diskon Admin PGM Express* untuk potongan biaya admin kasbon!\n\n` +
+                                  `Anda mendapatkan *Token Diskon Admin PGM Express* untuk potongan biaya admin kasbon sebesar Rp 5.000!\n\n` +
                                   `🔑 *Kode Token Anda*: \`${tokenDiskonOtomatis}\`\n\n` +
-                                  `Masukkan token ini pada halaman formulir untuk memotong biaya admin kasbon Anda menjadi Rp 5.000. Terima kasih telah berlangganan di PGM Express! 🚀`;
+                                  `Masukkan token ini pada halaman formulir untuk memotong biaya admin kasbon Anda. Terima kasih telah berlangganan di PGM Express! 🚀`;
                     
                     window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(pesanWa)}`, '_blank');
                 } else {
@@ -496,6 +508,51 @@
             });
         }
 
+        function gantiBulanRekap() {
+            muatPajakTersimpan();
+            renderRekapBulanan();
+        }
+
+        function muatPajakTersimpan() {
+            const bulan = document.getElementById('filter-bulan-rekap')?.value || '2026-11';
+            const pajakTersimpan = localStorage.getItem('pgm_pajak_' + bulan);
+            const inputPajak = document.getElementById('input-uang-pajak');
+            if (inputPajak) {
+                inputPajak.value = pajakTersimpan !== null ? pajakTersimpan : '';
+            }
+        }
+
+        function hitungProfitBersih() {
+            const bulan = document.getElementById('filter-bulan-rekap')?.value || '2026-11';
+            const inputPajak = document.getElementById('input-uang-pajak');
+            const nilaiPajak = parseFloat(inputPajak?.value) || 0;
+
+            localStorage.setItem('pgm_pajak_' + bulan, nilaiPajak);
+
+            const sisaUntungBersih = totalProfitKotorSaatIni - nilaiPajak;
+            const elBersih = document.getElementById('rekap-profit-bersih-akhir');
+            if (elBersih) {
+                elBersih.innerText = `Rp ${sisaUntungBersih.toLocaleString('id-ID')}`;
+                elBersih.className = sisaUntungBersih < 0
+                    ? "text-lg font-black text-rose-400 mt-0.5"
+                    : "text-lg font-black text-emerald-400 mt-0.5";
+            }
+        }
+
+        // FUNGSI HITUNG BIAYA ADMIN UNTUK DATA LAMA & BARU
+        function hitungFeeAdminItem(item, nominal) {
+            if (typeof item.biayaAdmin === 'number' && item.biayaAdmin > 0) {
+                return item.biayaAdmin;
+            }
+            if (item.jenis === 'KASBON') {
+                let adminDasar = 10000;
+                if (nominal >= 300000) adminDasar = 30000;
+                else if (nominal >= 250000) adminDasar = 20000;
+                return item.tokenDiskonUsed ? Math.max(0, adminDasar - 5000) : adminDasar;
+            }
+            return 3500;
+        }
+
         // FUNGSI RENDER REKAP RINCI PER BARIS (FILTER NOMINAL >= 20.000)
         function renderRekapBulanan() {
             const selectBulan = document.getElementById('filter-bulan-rekap');
@@ -513,7 +570,7 @@
             listKasbonGlobal.forEach(item => {
                 let nominal = Number(item.nominal || 0);
 
-                // ATURAN: Nominal di bawah Rp 20.000 (seperti 10.000 atau KTP doang) jangan dimasukkan ke rekapan
+                // ATURAN: Nominal di bawah Rp 20.000 jangan dimasukkan ke rekapan
                 if (nominal < 20000) {
                     return; 
                 }
@@ -521,8 +578,8 @@
                 adaData = true;
                 totalPelangganValid++;
 
-                let totalTrans = Number(item.total || (nominal + (item.jenis === 'KASBON' ? 10000 : 3500)));
-                let feeAdmin = item.jenis === 'KASBON' ? (item.tokenDiskonUsed ? 5000 : 10000) : 3500;
+                let feeAdmin = hitungFeeAdminItem(item, nominal);
+                let totalTrans = Number(item.total || (nominal + feeAdmin));
 
                 totalOmzet += totalTrans;
                 totalProfit += feeAdmin;
@@ -549,9 +606,14 @@
                 tbodyRinci.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 italic text-xs">Tidak ada transaksi dengan nominal di atas Rp 20.000 untuk direkap.</td></tr>`;
             }
 
+            totalProfitKotorSaatIni = totalProfit;
+
             document.getElementById('rekap-total-pelanggan').innerText = `${totalPelangganValid} Orang`;
             document.getElementById('rekap-total-omzet').innerText = `Rp ${totalOmzet.toLocaleString('id-ID')}`;
             document.getElementById('rekap-total-profit').innerText = `Rp ${totalProfit.toLocaleString('id-ID')}`;
+
+            // Perbarui sisa untung bersih setelah dikurangi uang pajak
+            hitungProfitBersih();
         }
     </script>
 </body>
